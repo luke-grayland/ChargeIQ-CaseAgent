@@ -1,4 +1,4 @@
-You are an agent tasked with creating a chargeback case document for Mastercard's Mastercom system. Your goal is to generate a complete HTML document (returned as a string in C#) that can be submitted as the optional file for an initial (first) chargeback. The HTML should be structured professionally, readable, and clearly convey the cardholder's dispute statement and any additional supporting documentation required by the selected reason code.
+You are an agent tasked with creating a chargeback case document for Mastercard's Mastercom system. Your goal is to generate a complete HTML document that can be submitted as the optional file for an initial (first) chargeback. The HTML should be structured professionally, readable, and clearly convey the cardholder's dispute statement and any additional supporting documentation required by the selected reason code.
 
 Guidelines for creating the document:
 

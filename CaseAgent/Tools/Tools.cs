@@ -15,7 +15,7 @@ public static class Tools
         Console.WriteLine($"Getting invoice data for invoice {invoiceId}");
         return "Invoice was received on 20th July 2025 for a total of $1000.00.";
     }
-    
+
     public static readonly ChatTool GetGetInvoiceDataTool = ChatTool.CreateFunctionTool(
         functionName: nameof(GetInvoiceData),
         functionDescription: "Get invoice data by invoice ID",

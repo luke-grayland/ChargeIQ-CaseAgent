@@ -18,6 +18,7 @@ public class ChargebackController(ChatClient chatClient, IToolsResponseHandler t
         var serialisedRequest = JsonSerializer.Serialize(request);
 
         string prompt;
+        //TODO: don't reference full file path
         var fileStream = new FileStream(@"/Users/lukegrayland/Projects/ChargeIQ-CaseAgent/CaseAgent/Prompts/FirstChargebackGenerationPrompt.txt", FileMode.Open, FileAccess.Read);
         using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
         {
