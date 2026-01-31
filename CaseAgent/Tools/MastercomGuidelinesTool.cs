@@ -8,8 +8,8 @@ public static class MastercomGuidelinesTool
     public static string GetMastercomGuidelines()
     {
         string text;
-        //TODO: don't reference full file path
-        var fileStream = new FileStream(@"/Users/lukegrayland/Projects/ChargeIQ-CaseAgent/CaseAgent/Prompts/MastercomLLMDoc.txt", FileMode.Open, FileAccess.Read);
+        var promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "MastercomLLMDoc.txt");
+        var fileStream = new FileStream(promptPath, FileMode.Open, FileAccess.Read);
         
         using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
         {
