@@ -1,41 +1,53 @@
-using System.Text;
-using System.Text.Json;
 using CaseAgent.Model.Requests;
+using CaseAgent.Model.Responses;
 using Microsoft.AspNetCore.Mvc;
 using CaseAgent.Services.Interfaces;
-using OpenAI;
 using OpenAI.Chat;
 
 namespace CaseAgent.Controllers;
 
 [ApiController]
 [Route("api/firstChargeback")]
-public class ChargebackController(ChatClient chatClient, IToolsResponseHandler toolsResponseHandler) : ControllerBase
+public class ChargebackController : ControllerBase
 {
+    private readonly ChatClient _chatClient;
+    private readonly IToolsResponseHandler _toolsResponseHandler;
+    private readonly IChargebackValidator _validator;
+    private readonly IChargebackGenerationService _generationService;
+
+    public ChargebackController(
+        ChatClient chatClient,
+        IToolsResponseHandler toolsResponseHandler,
+        IChargebackValidator validator,
+        IChargebackGenerationService generationService)
+    {
+        _chatClient = chatClient;
+        _toolsResponseHandler = toolsResponseHandler;
+        _validator = validator;
+        _generationService = generationService;
+    }
+
     [HttpPost]
+    [ProducesResponseType(typeof(ChargebackGenerationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateFirstChargeback([FromBody] CreateFirstChargebackRequest request)
     {
-        var serialisedRequest = JsonSerializer.Serialize(request);
+        var validationResult = _validator.Validate(request);
 
-        string prompt;
-        var promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "FirstChargebackGenerationPrompt.txt");
-        var fileStream = new FileStream(promptPath, FileMode.Open, FileAccess.Read);
-        using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
+        if (!validationResult.IsValid)
         {
-            prompt = await streamReader.ReadToEndAsync();
+            var errorResponse = new ErrorResponse
+            {
+                Message = "Validation failed",
+                Errors = validationResult.Errors,
+                Timestamp = DateTime.UtcNow
+            };
+            return BadRequest(errorResponse);
         }
-        
-        List<ChatMessage> messages =
-        [
-            new SystemChatMessage(prompt),
-            new UserChatMessage($"Generate a chargeback file in HTML format for this case: {serialisedRequest}")
-        ];
 
-        ChatCompletion result = await chatClient.CompleteChatAsync(messages);
-        
-        var chargebackFileHtml = result.Content[0].Text ?? string.Empty;
-        
-        return Ok(chargebackFileHtml);
+        var response = await _generationService.GenerateChargebackAsync(request);
+        return Ok(response);
     }
     
     [HttpPost]
@@ -51,10 +63,10 @@ public class ChargebackController(ChatClient chatClient, IToolsResponseHandler t
         {
             Tools = { Tools.Tools.GetGetInvoiceDataTool, Tools.Tools.GetDeploymentInfoTool }
         };
-        
-        ChatCompletion result = await chatClient.CompleteChatAsync(messages, options);
 
-        List<ChatMessage> chatMessages = toolsResponseHandler.HandleResponse(messages, result);
+        ChatCompletion result = await _chatClient.CompleteChatAsync(messages, options);
+
+        List<ChatMessage> chatMessages = _toolsResponseHandler.HandleResponse(messages, result);
 
         string textResult = "Result: ";
         var toolMessages = chatMessages.OfType<ToolChatMessage>().ToList();
@@ -63,7 +75,7 @@ public class ChargebackController(ChatClient chatClient, IToolsResponseHandler t
         {
             textResult += toolMessage.Content[0].Text + " ";
         }
-        
+
         return Ok(new { textResult });
     }
 }

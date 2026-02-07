@@ -1,3 +1,4 @@
+using CaseAgent.Middleware;
 using CaseAgent.Services;
 using CaseAgent.Services.Interfaces;
 using OpenAI.Chat;
@@ -17,8 +18,14 @@ builder.Services.AddSingleton<ChatClient>(serviceProvider =>
 });
 
 builder.Services.AddSingleton<IToolsResponseHandler, ToolsResponseHandler>();
+builder.Services.AddSingleton<IPromptLoaderService, PromptLoaderService>();
+builder.Services.AddSingleton<IChargebackValidator, ChargebackValidator>();
+builder.Services.AddSingleton<IPdfGenerationService, PdfGenerationService>();
+builder.Services.AddSingleton<IChargebackGenerationService, ChargebackGenerationService>();
 
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
