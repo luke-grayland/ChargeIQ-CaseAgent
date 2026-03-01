@@ -11,7 +11,7 @@ public class ChargebackController(IChargebackValidator validator, IChargebackGen
     : ControllerBase
 {
     [HttpPost]
-    [ProducesResponseType(typeof(ChargebackGenerationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateFirstChargeback([FromBody] CreateFirstChargebackRequest request)
@@ -29,7 +29,7 @@ public class ChargebackController(IChargebackValidator validator, IChargebackGen
             return BadRequest(errorResponse);
         }
 
-        var response = await generationService.GenerateChargebackAsync(request);
-        return Ok(response);
+        var pdfBytes = await generationService.GenerateChargebackAsync(request);
+        return File(pdfBytes, "application/pdf", $"first-chargeback-{Guid.NewGuid():N}.pdf");
     }
 }

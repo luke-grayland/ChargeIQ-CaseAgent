@@ -1,6 +1,5 @@
 using System.Text.Json;
 using CaseAgent.Model.Requests;
-using CaseAgent.Model.Responses;
 using CaseAgent.Services.Interfaces;
 using OpenAI.Chat;
 
@@ -9,7 +8,7 @@ namespace CaseAgent.Services;
 public class ChargebackGenerationService(IPromptLoaderService promptLoader, ChatClient chatClient,
     IPdfGenerationService pdfGenerator) : IChargebackGenerationService
 {
-    public async Task<ChargebackGenerationResponse> GenerateChargebackAsync(CreateFirstChargebackRequest request)
+    public async Task<byte[]> GenerateChargebackAsync(CreateFirstChargebackRequest request)
     {
         var prompt = await promptLoader.LoadPromptAsync("FirstChargebackGenerationPrompt.txt");
         var serializedRequest = JsonSerializer.Serialize(request);
@@ -23,13 +22,6 @@ public class ChargebackGenerationService(IPromptLoaderService promptLoader, Chat
         ChatCompletion result = await chatClient.CompleteChatAsync(messages);
         var htmlContent = result.Content[0].Text ?? string.Empty;
 
-        var fileId = await pdfGenerator.GenerateAndSavePdfAsync(htmlContent);
-
-        return new ChargebackGenerationResponse
-        {
-            FileId = fileId,
-            GeneratedAt = DateTime.UtcNow,
-            Success = true
-        };
+        return await pdfGenerator.GeneratePdfAsync(htmlContent);
     }
 }
